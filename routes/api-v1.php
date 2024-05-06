@@ -2,6 +2,11 @@
 // api-v1.php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ReservationController;
+
+Route::group(['middleware' => 'jwt.auth'], function () {
+    Route::post('/reservations', [ReservationController::class, 'store']);
+});
 
 Route::group(['prefix' => 'auth', 'middleware' => ['api']], function () {
     Route::post('login', [AuthController::class, 'login']);

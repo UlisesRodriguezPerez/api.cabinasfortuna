@@ -15,23 +15,21 @@ class AuthController extends Controller
     {
         $credentials = $request->only(['email', 'password']);
 
-        if (!$token = auth('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+        auth('api')->factory()->setTTL(43200);
 
-        return $this->respondWithToken($token);
+        try {
+            if (!$token = auth('api')->attempt($credentials)) {
+                return response()->json(['error' => 'Unauthorized'], 401);
+            }
+            return $this->respondWithToken($token);
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'Could not create token'], 500);
+        }
     }
 
     public function me()
     {
-        try {
-            if (!$user = auth('api')->user()) {
-                throw new JWTException("User not found", 404);
-            }
-            return response()->json($user);
-        } catch (JWTException $e) {
-            return response()->json(['error' => $e->getMessage()], $e->getCode());
-        }
+        return response()->json(auth('api')->user());
     }
 
     public function logout()
@@ -45,8 +43,7 @@ class AuthController extends Controller
     public function refresh()
     {
         try {
-            $newToken = auth('api')->refresh();
-            return $this->respondWithToken($newToken);
+            return $this->respondWithToken(auth('api')->refresh());
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not refresh token'], 401);
         }
@@ -54,14 +51,10 @@ class AuthController extends Controller
 
     protected function respondWithToken($token)
     {
-        try {
-            return response()->json([
-                'access_token' => $token,
-                'token_type' => 'bearer',
-                'expires_in' => auth('api')->factory()->getTTL() * 60
-            ]);
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not generate token'], 500);
-        }
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL()
+        ]);
     }
 }
