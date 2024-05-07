@@ -23,7 +23,7 @@ class GoogleCalendarController extends Controller
         $this->client->addScope(Google_Service_Calendar::CALENDAR);
         $this->client->setAccessType('offline');
         $this->client->setPrompt('select_account consent');
-        $this->client->setRedirectUri('http://localhost:8000/api/v1/google/callback');
+        $this->client->setRedirectUri('http://localhost:3000/auth/google-callback');
     }
 
     // Ahora se hace en el front
@@ -50,7 +50,7 @@ class GoogleCalendarController extends Controller
                 info('Failed to authenticate with Google: ' . $token['error']);
                 return response()->json(['error' => 'Failed to authenticate with Google: ' . $token['error']], 401);
             }
-
+            info('Token received: ' . json_encode($token));
             $user = auth()->user(); // Asegurar de que el usuario está autenticado antes de ejecutar esto
             $user->update([
                 'google_access_token' => $token['access_token'],
