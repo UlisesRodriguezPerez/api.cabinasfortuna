@@ -21,7 +21,20 @@ class AuthController extends Controller
             if (!$token = auth('api')->attempt($credentials)) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
-            return $this->respondWithToken($token);
+
+            // Obtén el usuario autenticado
+            $user = auth('api')->user();
+
+            // Verifica si el usuario ha completado la autenticación con Google
+            $requireGoogleAuth = !$user->is_google_auth_completed;
+
+            // Envía la respuesta al cliente con la información del token y si se necesita autenticación de Google
+            return response()->json([
+                'access_token' => $token,
+                'token_type' => 'bearer',
+                'expires_in' => auth('api')->factory()->getTTL() * 60, // segundos
+                'require_google_auth' => $requireGoogleAuth // Indica si se necesita autenticación de Google
+            ]);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }

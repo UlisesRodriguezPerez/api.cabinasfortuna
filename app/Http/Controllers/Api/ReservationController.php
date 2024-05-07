@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Reservation;
 use Carbon\Carbon;
+use Exception;
+use Google_Client;
+use Google_Service_Calendar;
+use Google_Service_Calendar_Event;
 use Illuminate\Http\Request;
 
 class ReservationController extends Controller
 {
-    public function store(Request $request)
+    public function store(Request $request, GoogleCalendarController $googleCalendarController)
     {
 
         try {
@@ -41,8 +45,11 @@ class ReservationController extends Controller
                 $data['date'] = Carbon::parse($data['date'])->format('Y-m-d H:i:s');
             }
             $reservation = Reservation::create($data);
+            
+            // Una vez que la reserva se guarda, delega la creación del evento de calendario al otro controlador
+            $googleCalendarController->createEvent($reservation);
+            return response()->json(['message' => 'Reserva creada y evento de calendario añadido con éxito!'], 201);
 
-            return response()->json($reservation, 201); // Devuelve la reserva creada y un código de estado 201
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
