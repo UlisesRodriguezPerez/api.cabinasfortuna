@@ -107,12 +107,54 @@ class GoogleCalendarController extends Controller
 
         $calendarService = new Google_Service_Calendar($this->client);
 
-        $colorId = 20;
+        $numberCabin = $reservation->cabin;
+        $persons = $reservation->adults + $reservation->children;
+        $adults = $reservation->adults;
+        $children = $reservation->children;
+        $nights = $reservation->nights;
+        $totalAmountUSD = $reservation->amountUSD;
+        $totalAmountCRC = $reservation->amountCRC;
+        $clientName = $reservation->name;
+        $phoneNumber = $reservation->phoneNumber ?? 'N/A';
+        $agency = $reservation->agency;
+        $commission = $reservation->commission ?? 0;
+        $paidToUlisesUSD = $reservation->paidToUlisesUSD ?? 0;
+        $paidToDeyaniraUSD = $reservation->paidToDeyaniraUSD ?? 0;
+        $paidToUlisesCRC = $reservation->paidToUlisesCRC ?? 0;
+        $paidToDeyaniraCRC = $reservation->paidToDeyaniraCRC ?? 0;
+        $invoiceNeeded = $reservation->invoiceNeeded ?? false;
+        $paidToDeyanira = $reservation->paidToDeyanira ?? false;
+        $pendingToPay = $reservation->pendingToPay ?? false;
+        $pendingAmountUSD = $reservation->pendingAmountUSD ?? 0;
+        $pendingAmountCRC = $reservation->pendingAmountCRC ?? 0;
+        $note = $reservation->note ?? 'N/A';
+        $personsText = $adults > 1 ? 'personas' : 'persona';
+
+        $description = "{$clientName}\n"
+        . "{$adults} adultos\n"
+        . "{$children} niños\n"
+        . "{$nights} noches\n"
+        . ($totalAmountUSD ? "Monto total: {$totalAmountUSD} USD\n" : "")
+        . ($totalAmountCRC ? "Monto total: {$totalAmountCRC} CRC\n" : "")
+        . ($paidToUlisesUSD ? "Pagó a Ulises: {$paidToUlisesUSD} USD\n" : "")
+        . ($paidToUlisesCRC ? "Pagó a Ulises: {$paidToUlisesCRC} CRC\n" : "")
+        . ($paidToDeyanira ? "Pagó a Deyanira:\n" : "")
+        . ($paidToDeyaniraUSD ? "    - {$paidToDeyaniraUSD} USD\n" : "")
+        . ($paidToDeyaniraCRC ? "    - {$paidToDeyaniraCRC} CRC\n" : "")
+        . ($pendingToPay ? "Pendiente:\n" : "")
+        . ($pendingAmountUSD ? "    - {$pendingAmountUSD} USD\n" : "")
+        . ($pendingAmountCRC ? "    - {$pendingAmountCRC} CRC\n" : "")
+        . ($agency ? "Agencia: {$agency}\n" : "")
+        . ($commission ? "Comisión: {$commission}\n" : "")
+        . ($invoiceNeeded ? "Factura requerida: " . ($invoiceNeeded ? 'Sí' : 'No') . "\n" : "")
+        . "Teléfono: {$phoneNumber}\n"
+        . "Nota: {$note}";
+
 
         info('Creating event in Google Calendar');
         $event = new Google_Service_Calendar_Event([
-            'summary' => 'Reserva para ' . $reservation->name . $colorId,
-            'description' => 'Detalles de la reserva...',
+            'summary' => "Cabina #{$numberCabin}, {$persons} {$personsText}, {$nights} noches",
+            'description' => $description,
             'start' => [
                 'date' => Carbon::parse($reservation->date)->toDateString(), // Formato YYYY-MM-DD
                 'timeZone' => 'America/Costa_Rica',
@@ -122,10 +164,10 @@ class GoogleCalendarController extends Controller
                 'timeZone' => 'America/Costa_Rica',
             ],
             'attendees' => [
-                ['email' => 'persona1@example.com'],
-                ['email' => 'persona2@example.com']
+                // ['email' => 'hidalgoelizondomoni1213@gmail.com'],
+                ['email' => 'lisrp.97@gmail.com']
             ],
-            'colorId' => $colorId,//$this->getColorId($reservation->cabin),
+            'colorId' => $this->getColorId($reservation->cabin),
             'guestsCanModify' => false,
         ]);
 
@@ -170,11 +212,11 @@ class GoogleCalendarController extends Controller
     private function getColorId($cabin)
     {
         $colors = [
-            1 => '1',
-            2 => '2',
-            3 => '3',
-            4 => '4',
-            5 => '5',
+            1 => '11', // Red
+            2 => '5', // Yellow
+            3 => '3', // Purple
+            4 => '10', // Green
+            5 => '7', // Light blue
         ];
         return $colors[$cabin] ?? '1';
     }
