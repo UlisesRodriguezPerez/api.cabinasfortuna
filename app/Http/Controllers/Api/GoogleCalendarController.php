@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Redirect;
 use Session;
 use Carbon\Carbon;
 use Exception;
+use Google_Service_Exception;
 
 class GoogleCalendarController extends Controller
 {
@@ -52,12 +53,27 @@ class GoogleCalendarController extends Controller
             }
             info('Token received: ' . json_encode($token));
             $user = auth()->user(); // Asegurar de que el usuario está autenticado antes de ejecutar esto
+
+            info('Updating user with: ', [
+                'access_token' => $token['access_token'],
+                'refresh_token' => $token['refresh_token'],
+                'expires_at' => Carbon::now()->addSeconds($token['expires_in']),
+            ]);
+
             $user->update([
                 'google_access_token' => $token['access_token'],
                 'google_refresh_token' => $token['refresh_token'],
-                'token_expires_at' => Carbon::now()->addSeconds($token['expires_in']),
+                'google_token_expires_at' => Carbon::now()->addSeconds($token['expires_in']),
                 'is_google_auth_completed' => true
             ]);
+
+            info('User updated: ', [
+                'google_access_token' => $user->google_access_token,
+                'google_refresh_token' => $user->google_refresh_token,
+                'google_token_expires_at' => $user->google_token_expires_at,
+                'is_google_auth_completed' => $user->is_google_auth_completed,
+            ]);
+
             info('Successfully authenticated with Google');
             info('User info: ' . json_encode($user));
 
@@ -72,10 +88,16 @@ class GoogleCalendarController extends Controller
     {
         info('Creating event for reservation: ' . json_encode($reservation));
         $user = auth()->user();
+        info('User: ' . json_encode($user));
+
+        if ($user->google_token_expires_at->isPast()) {
+            $this->refreshToken($user);
+        }
+
         $this->client->setAccessToken([
             'access_token' => $user->google_access_token,
             'refresh_token' => $user->google_refresh_token,
-            'expires_in' => $user->token_expires_at->getTimestamp() - time()
+            'expires_in' => $user->google_token_expires_at->diffInSeconds(Carbon::now())
         ]);
 
         if ($this->client->isAccessTokenExpired()) {
@@ -85,32 +107,50 @@ class GoogleCalendarController extends Controller
 
         $calendarService = new Google_Service_Calendar($this->client);
 
+        $colorId = 20;
+
         info('Creating event in Google Calendar');
         $event = new Google_Service_Calendar_Event([
-            'summary' => 'Reserva para ' . $reservation->name,
+            'summary' => 'Reserva para ' . $reservation->name . $colorId,
             'description' => 'Detalles de la reserva...',
             'start' => [
-                'dateTime' => $reservation->date,
+                'date' => Carbon::parse($reservation->date)->toDateString(), // Formato YYYY-MM-DD
                 'timeZone' => 'America/Costa_Rica',
             ],
             'end' => [
-                'dateTime' => Carbon::parse($reservation->date)->addDays($reservation->nights - 1)->format('Y-m-d'),
+                'date' => Carbon::parse($reservation->date)->addDays($reservation->nights)->toDateString(), // Fecha de fin debe ser +1 día del último día completo
                 'timeZone' => 'America/Costa_Rica',
             ],
             'attendees' => [
                 ['email' => 'persona1@example.com'],
                 ['email' => 'persona2@example.com']
             ],
-            'colorId' => $this->getColorId($reservation->cabin)
+            'colorId' => $colorId,//$this->getColorId($reservation->cabin),
+            'guestsCanModify' => false,
         ]);
 
         info('Event details: ' . json_encode($event));
 
+        $calendarService2 = new Google_Service_Calendar($this->client);
+    try {
+        $colors = $calendarService2->colors->get();
+        info('Available colors: ' . json_encode($colors));
+        // return $colors;
+    } catch (Exception $e) {
+        info('Error fetching colors: ' . $e->getMessage());
+        return null;
+    }
+
         try {
-            $calendarService->events->insert(env('GOOGLE_CALENDAR_ID'), $event);
-            info('Event created successfully');
+            $createdEvent = $calendarService->events->insert(env('GOOGLE_CALENDAR_ID'), $event);
+            info('Event created successfully: ' . json_encode($createdEvent));
             return redirect()->back()->with('status', 'Reserva y evento de calendario creados con éxito!');
+        } catch (Google_Service_Exception $e) {
+            $errors = $e->getErrors();
+            info('Error creating event: ' . json_encode($errors));
+            return redirect()->back()->with('error', 'Error al crear el evento en el calendario: ' . json_encode($errors));
         } catch (Exception $e) {
+            info('Error creating event: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error al crear el evento en el calendario: ' . $e->getMessage());
         }
     }
@@ -121,7 +161,7 @@ class GoogleCalendarController extends Controller
             $refreshedToken = $this->client->fetchAccessTokenWithRefreshToken($user->google_refresh_token);
             $user->update([
                 'google_access_token' => $refreshedToken['access_token'],
-                'token_expires_at' => Carbon::now()->addSeconds($refreshedToken['expires_in'])
+                'google_token_expires_at' => Carbon::now()->addSeconds($refreshedToken['expires_in'])
             ]);
         }
     }

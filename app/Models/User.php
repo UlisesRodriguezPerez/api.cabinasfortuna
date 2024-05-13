@@ -14,15 +14,18 @@ class User extends Authenticatable implements JWTSubject
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    protected $dates = [
+        'google_token_expires_at',
+    ];
+    
     protected $fillable = [
         'name',
         'email',
         'password',
+        'google_access_token', 
+        'google_refresh_token', 
+        'google_token_expires_at', 
+        'is_google_auth_completed',
     ];
 
     /**

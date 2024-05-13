@@ -16,7 +16,7 @@ class AddGoogleTokensToUsersTable extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->string('google_access_token')->nullable();
             $table->string('google_refresh_token')->nullable();
-            $table->dateTime('token_expires_at')->nullable();
+            $table->dateTime('google_token_expires_at')->nullable();
         });
     }
 
@@ -28,7 +28,7 @@ class AddGoogleTokensToUsersTable extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['google_access_token', 'google_refresh_token', 'token_expires_at']);
+            $table->dropColumn(['google_access_token', 'google_refresh_token', 'google_token_expires_at']);
         });
     }
 }
