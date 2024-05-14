@@ -18,8 +18,6 @@ class ReservationController extends Controller
     {
         $connection = DB::connection(); // Obtiene la conexión de base de datos por defecto
         $connection->beginTransaction(); // Comienza una transacción
-        info('parte 1');
-        info($request->all());
         try {
             $data = $request->validate([
                 'name' => 'required|string|max:255',
@@ -45,18 +43,14 @@ class ReservationController extends Controller
                 'note' => 'nullable|string',
             ]);
 
-            info('parte 2');
 
             if (!empty($data['date'])) {
                 $data['date'] = Carbon::parse($data['date'])->format('Y-m-d H:i:s');
             }
 
-            info('parte 2.5');
             $reservation = Reservation::create($data);
-            info('parte 3');
             // Una vez que la reserva se guarda, delega la creación del evento de calendario al otro controlador
             $googleCalendarController->createEvent($reservation);
-            info('parte 4');
             $connection->commit(); // Confirma la transacción si todo es exitoso
 
             return response()->json(['message' => 'Reserva creada y evento de calendario añadido con éxito!'], 201);

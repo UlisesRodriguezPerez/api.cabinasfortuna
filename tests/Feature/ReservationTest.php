@@ -45,8 +45,6 @@ class ReservationTest extends TestCase
             'note' => 'Test reservation'
         ]);
 
-        info('1');
-
         $response->assertStatus(201);
         // $response->assertJson(['message' => 'Reserva registrada con éxito']);
     }

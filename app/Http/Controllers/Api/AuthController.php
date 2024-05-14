@@ -5,12 +5,22 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Services\GoogleClientService;
 use Illuminate\Support\Facades\Auth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
+
 class AuthController extends Controller
 {
+
+    protected $googleClientService;
+
+    public function __construct(GoogleClientService $googleClientService)
+    {
+        $this->googleClientService = $googleClientService;
+    }
+    
     public function login(Request $request)
     {
         $credentials = $request->only(['email', 'password']);
@@ -42,7 +52,17 @@ class AuthController extends Controller
 
     public function me()
     {
-        return response()->json(auth('api')->user());
+        $user = auth('api')->user();
+        $this->googleClientService->refreshToken($user);
+
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'is_google_auth_completed' => $user->is_google_auth_completed,
+            'google_access_token' => $user->google_access_token,
+            'google_token_expires_at' => $user->google_token_expires_at,
+        ]);
     }
 
     public function logout()
