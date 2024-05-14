@@ -24,7 +24,7 @@ class GoogleCalendarController extends Controller
         $this->client->addScope(Google_Service_Calendar::CALENDAR);
         $this->client->setAccessType('offline');
         $this->client->setPrompt('select_account consent');
-        $this->client->setRedirectUri('http://localhost:3000/auth/google-callback');
+        $this->client->setRedirectUri(env('GOOGLE_REDIRECT_URI') . '/auth/google-callback');
     }
 
     // Ahora se hace en el front
