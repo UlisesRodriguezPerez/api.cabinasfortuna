@@ -135,7 +135,7 @@ class GoogleCalendarController extends Controller
                 'timeZone' => 'America/Costa_Rica',
             ],
             'attendees' => [
-                // ['email' => 'hidalgoelizondomoni1213@gmail.com'],
+                ['email' => 'deyanirap862@gmail.com'],
                 ['email' => 'lisrp.97@gmail.com']
             ],
             'colorId' => $this->getColorId($reservation->cabin),
