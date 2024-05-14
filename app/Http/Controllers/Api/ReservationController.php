@@ -10,12 +10,14 @@ use Google_Client;
 use Google_Service_Calendar;
 use Google_Service_Calendar_Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
 {
     public function store(Request $request, GoogleCalendarController $googleCalendarController)
     {
-
+        $connection = DB::connection(); // Obtiene la conexión de base de datos por defecto
+        $connection->beginTransaction(); // Comienza una transacción
         try {
             $data = $request->validate([
                 'name' => 'required|string|max:255',
@@ -45,14 +47,17 @@ class ReservationController extends Controller
                 $data['date'] = Carbon::parse($data['date'])->format('Y-m-d H:i:s');
             }
             $reservation = Reservation::create($data);
-            
+
             // Una vez que la reserva se guarda, delega la creación del evento de calendario al otro controlador
             $googleCalendarController->createEvent($reservation);
-            return response()->json(['message' => 'Reserva creada y evento de calendario añadido con éxito!'], 201);
+            $connection->commit(); // Confirma la transacción si todo es exitoso
 
+            return response()->json(['message' => 'Reserva creada y evento de calendario añadido con éxito!'], 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $connection->rollBack(); // Revierte la transacción si hay un error de validación
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Exception $e) {
+            $connection->rollBack(); // Revierte la transacción si hay cualquier otro error
             return response()->json(['error' => 'Error al crear la reserva: ' . $e->getMessage()], 500);
         }
     }
