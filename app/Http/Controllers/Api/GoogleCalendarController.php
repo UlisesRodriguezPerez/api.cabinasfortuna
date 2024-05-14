@@ -130,6 +130,8 @@ class GoogleCalendarController extends Controller
         $note = $reservation->note ?? 'N/A';
         $personsText = $adults > 1 ? 'personas' : 'persona';
 
+        info('part 6');
+
         $description = "{$clientName}\n"
         . "{$adults} adultos\n"
         . "{$children} niños\n"
@@ -149,7 +151,6 @@ class GoogleCalendarController extends Controller
         . ($invoiceNeeded ? "Factura requerida: " . ($invoiceNeeded ? 'Sí' : 'No') . "\n" : "")
         . "Teléfono: {$phoneNumber}\n"
         . "Nota: {$note}";
-
 
         info('Creating event in Google Calendar');
         $event = new Google_Service_Calendar_Event([
@@ -184,6 +185,7 @@ class GoogleCalendarController extends Controller
     }
 
         try {
+            info('part 8');
             $createdEvent = $calendarService->events->insert(env('GOOGLE_CALENDAR_ID'), $event);
             info('Event created successfully: ' . json_encode($createdEvent));
             return redirect()->back()->with('status', 'Reserva y evento de calendario creados con éxito!');
