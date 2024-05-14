@@ -30,7 +30,8 @@ class Reservation extends Model
         'pendingAmountUSD', 
         'pendingAmountCRC', 
         'note',
-        'google_event_id'
+        'google_event_id',
+        'created_by'
     ];
     
     use HasFactory;

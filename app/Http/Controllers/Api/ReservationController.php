@@ -48,6 +48,8 @@ class ReservationController extends Controller
                 $data['date'] = Carbon::parse($data['date'])->format('Y-m-d H:i:s');
             }
 
+            $data['created_by'] = auth()->id(); // Guarda el ID del usuario autenticado
+
             $reservation = Reservation::create($data);
             // Una vez que la reserva se guarda, delega la creación del evento de calendario al otro controlador
             $googleCalendarController->createEvent($reservation);
