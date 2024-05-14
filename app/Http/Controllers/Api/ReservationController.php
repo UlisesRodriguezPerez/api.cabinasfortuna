@@ -22,10 +22,10 @@ class ReservationController extends Controller
         info($request->all());
         try {
             $data = $request->validate([
-                // 'name' => 'required|string|max:255',
-                // 'phoneNumber' => 'string|max:255',
-                // 'date' => 'required|date',
-                // 'adults' => 'required|integer|min:1',
+                'name' => 'required|string|max:255',
+                'phoneNumber' => 'nullable|string|max:255',
+                'date' => 'required|date',
+                'adults' => 'required|integer|min:1',
                 'children' => 'required|integer',
                 'cabin' => 'required|integer',
                 'nights' => 'required|integer|min:1',
@@ -50,6 +50,8 @@ class ReservationController extends Controller
             if (!empty($data['date'])) {
                 $data['date'] = Carbon::parse($data['date'])->format('Y-m-d H:i:s');
             }
+
+            info('parte 2.5');
             $reservation = Reservation::create($data);
             info('parte 3');
             // Una vez que la reserva se guarda, delega la creación del evento de calendario al otro controlador
