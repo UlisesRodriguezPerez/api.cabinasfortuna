@@ -43,6 +43,10 @@ class ReservationController extends Controller
                 'note' => 'nullable|string',
             ]);
 
+            $fecha = Carbon::parse($request->date);
+            $fecha->setTimezone('America/Costa_Rica');
+            $data['date'] = $fecha->format('Y-m-d H:i:s');
+
 
             if (!empty($data['date'])) {
                 $data['date'] = Carbon::parse($data['date'])->format('Y-m-d H:i:s');
