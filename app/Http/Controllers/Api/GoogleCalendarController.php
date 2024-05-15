@@ -143,7 +143,7 @@ class GoogleCalendarController extends Controller
         ]);
 
         try {
-            $createdEvent = $calendarService->events->insert(env('GOOGLE_CALENDAR_ID'), $event);
+            $createdEvent = $calendarService->events->insert(env('GOOGLE_CALENDAR_ID'), $event, ['sendUpdates' => 'all']);
             // Guarda el ID del evento en la reserva
             $reservation->update(['google_event_id' => $createdEvent->getId()]);
             return response()->json(['status' => 'success', 'message' => 'Reserva y evento de calendario creados con éxito!']);
