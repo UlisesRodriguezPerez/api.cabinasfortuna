@@ -14,6 +14,14 @@ use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
 {
+
+    public function index()
+    {
+        $reservations = Reservation::all();
+        info($reservations);
+        return response()->json($reservations);
+    }
+
     public function store(Request $request, GoogleCalendarController $googleCalendarController)
     {
         $connection = DB::connection(); // Obtiene la conexión de base de datos por defecto

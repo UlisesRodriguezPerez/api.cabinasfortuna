@@ -31,7 +31,8 @@ class Reservation extends Model
         'pendingAmountCRC', 
         'note',
         'google_event_id',
-        'created_by'
+        'created_by',
+        'status'
     ];
     
     use HasFactory;
