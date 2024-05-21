@@ -32,7 +32,11 @@ class Reservation extends Model
         'note',
         'google_event_id',
         'created_by',
-        'status'
+        'status', 
+        'amountCRCToUSD', 
+        'amountUSDToCRC', 
+        'CHANGE_DOLLAR_TO_COLON', 
+        'CHANGE_COLON_TO_DOLLAR'
     ];
     
     use HasFactory;

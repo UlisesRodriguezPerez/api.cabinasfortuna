@@ -9,6 +9,7 @@ use Carbon\Carbon;
 Route::group(['middleware' => 'jwt.auth'], function () {
     Route::post('/reservations', [ReservationController::class, 'store']);
     Route::get('/reservations', [ReservationController::class, 'index']);
+    Route::put('/reservations/{reservation}', [ReservationController::class, 'update']);
     Route::get('/google/redirect', [GoogleCalendarController::class, 'redirectToGoogle'])->name('google.redirect');
     Route::post('/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback'])->name('google.callback');
     Route::post('/google/event/create', [GoogleCalendarController::class, 'createEvent'])->name('google.event.create');
