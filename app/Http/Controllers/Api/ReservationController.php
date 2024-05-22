@@ -23,7 +23,6 @@ class ReservationController extends Controller
 
     public function store(Request $request, GoogleCalendarController $googleCalendarController)
     {
-        info('test 2');
         $connection = DB::connection(); // Obtiene la conexión de base de datos por defecto
         $connection->beginTransaction(); // Comienza una transacción
         try {
@@ -55,31 +54,19 @@ class ReservationController extends Controller
                 'CHANGE_COLON_TO_DOLLAR' => 'nullable|numeric',
             ]);
 
-            info('test 3');
-
             $fecha = Carbon::parse($request->date);
             $fecha->setTimezone('America/Costa_Rica');
             $data['date'] = $fecha->format('Y-m-d H:i:s');
-
-            info('test 4');
 
             if (!empty($data['date'])) {
                 $data['date'] = Carbon::parse($data['date'])->format('Y-m-d H:i:s');
             }
 
-            info('test 5');
-
             $data['created_by'] = auth()->id(); // Guarda el ID del usuario autenticado
 
-            info('test 6');
-
             $reservation = Reservation::create($data);
-
-            info('test 7');
             // Una vez que la reserva se guarda, delega la creación del evento de calendario al otro controlador
             $googleCalendarController->createEvent($reservation);
-
-            info('test 8');
             $connection->commit(); // Confirma la transacción si todo es exitoso
 
             return response()->json(['message' => 'Reserva creada y evento de calendario añadido con éxito!'], 201);
@@ -94,7 +81,6 @@ class ReservationController extends Controller
 
     public function update(Request $request, Reservation $reservation, GoogleCalendarController $googleCalendarController)
     {
-        info('test');
         $connection = DB::connection(); // Obtiene la conexión de base de datos por defecto
         $connection->beginTransaction();
 
