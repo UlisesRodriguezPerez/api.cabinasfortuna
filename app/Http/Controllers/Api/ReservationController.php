@@ -15,9 +15,29 @@ use Illuminate\Support\Facades\DB;
 class ReservationController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
-        $reservations = Reservation::all();
+        // $reservations = Reservation::all();
+        // return response()->json($reservations);
+        $query = Reservation::query();
+
+        if ($request->filled('startDate') && $request->filled('endDate')) {
+            $query->whereBetween('date', [$request->startDate, $request->endDate]);
+        }
+
+        if ($request->filled('cabin')) {
+            $query->where('cabin', $request->cabin);
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('agency')) {
+            $query->where('agency', $request->agency);
+        }
+
+        $reservations = $query->get();
         return response()->json($reservations);
     }
 
@@ -132,6 +152,5 @@ class ReservationController extends Controller
             $connection->rollBack();
             return response()->json(['error' => 'Error al actualizar la reserva: ' . $e->getMessage()], 500);
         }
-
     }
 }
