@@ -142,6 +142,7 @@ class ReservationController extends Controller
                 'amountUSDToCRC' => 'nullable|numeric',
                 'CHANGE_DOLLAR_TO_COLON' => 'nullable|numeric',
                 'CHANGE_COLON_TO_DOLLAR' => 'nullable|numeric',
+                'status' => 'required|string|in:Pendiente,Confirmada,Cancelada'
             ]);
 
             $fecha = Carbon::parse($request->date);
@@ -189,6 +190,20 @@ class ReservationController extends Controller
         } catch (\Exception $e) {
             $connection->rollBack();
             return response()->json(['error' => 'Error al eliminar la reserva: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function updateStatus(Request $request, Reservation $reservation)
+    {
+        $validatedData = $request->validate([
+            'status' => 'required|string|in:Pendiente,Confirmada,Cancelada'
+        ]);
+
+        try {
+            $reservation->update(['status' => $validatedData['status']]);
+            return response()->json(['message' => 'Estado de la reserva actualizado con éxito!']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al actualizar el estado de la reserva: ' . $e->getMessage()], 500);
         }
     }
 }
