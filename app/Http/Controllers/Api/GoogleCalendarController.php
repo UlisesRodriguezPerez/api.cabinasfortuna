@@ -29,7 +29,8 @@ class GoogleCalendarController extends Controller
         $this->refreshTokensIfNeeded(auth()->user());
     }
 
-    private function refreshTokensIfNeeded($user) {
+    private function refreshTokensIfNeeded($user)
+    {
         if ($this->client->isAccessTokenExpired() || $user->google_token_expires_at->isPast()) {
             $this->refreshToken($user);
         }
@@ -67,7 +68,6 @@ class GoogleCalendarController extends Controller
         }
     }
 
-
     public function createEvent($reservation)
     {
         $user = auth()->user();
@@ -100,19 +100,21 @@ class GoogleCalendarController extends Controller
             $createdEvent = $calendarService->events->insert(env('GOOGLE_CALENDAR_ID'), $event, ['sendUpdates' => 'all']);
             $reservation->update(['google_event_id' => $createdEvent->getId()]);
             return response()->json(['status' => 'success', 'message' => 'Reserva y evento de calendario creados con éxito!']);
-
         } catch (Google_Service_Exception $e) {
             $errors = $e->getErrors();
-            return redirect()->back()->with('error', 'Error al crear el evento en el calendario: ' . json_encode($errors));
+            throw new Exception('Error al actualizar el evento en el calendario: ' . json_encode($errors));
         } catch (Exception $e) {
-            return redirect()->back()->with('error', 'Error al crear el evento en el calendario: ' . $e->getMessage());
+            throw new Exception('Error al actualizar el evento en el calendario: ' . $e->getMessage());
         }
     }
 
     public function updateEvent($reservation)
-    {   
-        $user = auth()->user();
+    {
+        if (empty($reservation->google_event_id)) {
+            throw new Exception('No existe un ID de evento de Google para esta reserva.');
+        }
 
+        $user = auth()->user();
         $this->client->setAccessToken([
             'access_token' => $user->google_access_token,
             'refresh_token' => $user->google_refresh_token,
@@ -121,35 +123,67 @@ class GoogleCalendarController extends Controller
 
         $calendarService = new Google_Service_Calendar($this->client);
 
-        // Recuperar el evento existente usando el google_event_id
-        $event = $calendarService->events->get(env('GOOGLE_CALENDAR_ID'), $reservation->google_event_id);
-
         try {
+            // Recuperar el evento existente usando el google_event_id
+            $event = $calendarService->events->get(env('GOOGLE_CALENDAR_ID'), $reservation->google_event_id);
+
             $event->setSummary($this->buildSummary($reservation));
             $event->setDescription($this->buildDescription($reservation));
             $event->setStart($this->buildEventDateTime($reservation->date, 0));
-            $event->setEnd($this->buildEventDateTime($reservation->date, $reservation->nights));            
+            $event->setEnd($this->buildEventDateTime($reservation->date, $reservation->nights));
             $event->setColorId($this->getColorId($reservation->cabin));
 
             $updatedEvent = $calendarService->events->update(env('GOOGLE_CALENDAR_ID'), $reservation->google_event_id, $event, ['sendUpdates' => 'all']);
             return response()->json(['status' => 'success', 'message' => 'Reserva y evento de calendario actualizados con éxito!']);
-
         } catch (Google_Service_Exception $e) {
-            $errors = $e->getErrors();
-            return redirect()->back()->with('error', 'Error al actualizar el evento en el calendario: ' . json_encode($errors));
-        } catch (Exception $e) {
-            return redirect()->back()->with('error', 'Error al actualizar el evento en el calendario: ' . $e->getMessage());
+            throw new \Exception('Error de Google Calendar: ' . json_encode($e->getErrors()));
+        } catch (\Exception $e) {
+            throw new \Exception('Error de sistema: ' . $e->getMessage());
         }
-
     }
 
-    private function buildSummary($reservation) {
+    public function deleteEvent($reservation)
+    {
+        if (empty($reservation->google_event_id)) {
+            throw new Exception('No existe un ID de evento de Google para esta reserva.');
+        }
+
+        $user = auth()->user();
+        $this->client->setAccessToken([
+            'access_token' => $user->google_access_token,
+            'refresh_token' => $user->google_refresh_token,
+            'expires_in' => $user->google_token_expires_at->diffInSeconds(Carbon::now())
+        ]);
+
+        $calendarService = new Google_Service_Calendar($this->client);
+
+        try {
+            $calendarService->events->delete(env('GOOGLE_CALENDAR_ID'), $reservation->google_event_id, ['sendUpdates' => 'all']);
+            return response()->json(['status' => 'success', 'message' => 'Reserva y evento de calendario eliminados con éxito!']);
+        } catch (Google_Service_Exception $e) {
+            $errors = $e->getErrors();
+
+            $errorMessage = json_encode($errors);
+
+            // Buscamos un mensaje específico de error que indica que el recurso fue eliminado o no encontrado
+            if (strpos($errorMessage, 'not found') !== false || strpos($errorMessage, 'Resource has been deleted') !== false) {
+                return ['status' => 'warning', 'message' => 'El evento de Google Calendar ya no existe, se procederá con otras operaciones.'];
+            }
+            throw new \Exception('Error de Google Calendar: ' . json_encode($errors));
+        } catch (\Exception $e) {
+            throw new \Exception('Error de sistema: ' . $e->getMessage());
+        }
+    }
+
+    private function buildSummary($reservation)
+    {
         $persons = $reservation->adults + $reservation->children;
         $personsText = $persons > 1 ? 'personas' : 'persona';
         return "Cabina #{$reservation->cabin}, {$persons} {$personsText}, {$reservation->nights} noches";
     }
-    
-    private function buildDescription($reservation) {
+
+    private function buildDescription($reservation)
+    {
 
         $ChangeDollarToColon = $reservation->CHANGE_DOLLAR_TO_COLON;
         $ChangeColonToDollar = $reservation->CHANGE_COLON_TO_DOLLAR;
@@ -197,8 +231,9 @@ class GoogleCalendarController extends Controller
             . "Nota: {$note}";
         return $description;
     }
-    
-    private function buildEventDateTime($date, $daysToAdd) {
+
+    private function buildEventDateTime($date, $daysToAdd)
+    {
         $eventDateTime = new Google_Service_Calendar_EventDateTime();
         $eventDateTime->setDate(Carbon::parse($date)->addDays($daysToAdd)->toDateString());
         $eventDateTime->setTimeZone('America/Costa_Rica');

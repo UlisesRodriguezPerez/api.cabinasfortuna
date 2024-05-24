@@ -10,6 +10,7 @@ use Google_Client;
 use Google_Service_Calendar;
 use Google_Service_Calendar_Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ReservationController extends Controller
@@ -35,6 +36,16 @@ class ReservationController extends Controller
 
         if ($request->filled('agency')) {
             $query->where('agency', $request->agency);
+        }
+
+        if ($request->filled('search')) {
+            // Asumiendo que 'name' es un campo en el que quieras buscar
+            // y puedes agregar más campos en el where como 'email', 'phone', etc.
+            $query->where(function ($query) use ($request) {
+                $query->where('name', 'like', '%' . $request->search . '%')
+                    ->orWhere('note', 'like', '%' . $request->search . '%') // Si también deseas buscar por email
+                    ->orWhere('phoneNumber', 'like', '%' . $request->search . '%'); // Si también deseas buscar por teléfono
+            });
         }
 
         $reservations = $query->get();
@@ -151,6 +162,33 @@ class ReservationController extends Controller
         } catch (\Exception $e) {
             $connection->rollBack();
             return response()->json(['error' => 'Error al actualizar la reserva: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function destroy(Reservation $reservation, GoogleCalendarController $googleCalendarController)
+    {
+        // Obtiene el usuario autenticado
+        $user = Auth::user();
+
+        // Verifica si el correo electrónico del usuario coincide con el permitido
+        if ($user->email !== 'uli.rp1999@gmail.com') {
+            return response()->json(['error' => 'Acceso denegado. No tienes permiso para realizar esta acción.'], 403);
+        }
+
+        $connection = DB::connection();
+        $connection->beginTransaction();
+
+        try {
+            $googleCalendarController->deleteEvent($reservation);
+
+            $reservation->delete();
+
+            $connection->commit();
+
+            return response()->json(['message' => 'Reserva eliminada con éxito!']);
+        } catch (\Exception $e) {
+            $connection->rollBack();
+            return response()->json(['error' => 'Error al eliminar la reserva: ' . $e->getMessage()], 500);
         }
     }
 }

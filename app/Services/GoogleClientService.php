@@ -18,6 +18,8 @@ class GoogleClientService
 
     protected function setupClient()
     {
+        info('GoogleClientService: setupClient');
+        info(base_path(env('GOOGLE_APPLICATION_CREDENTIALS'))); // /var/www/html/laravel-app/storage/credentials.json
         $this->client->setAuthConfig(base_path(env('GOOGLE_APPLICATION_CREDENTIALS')));
         $this->client->setAccessType('offline');
         $this->client->setPrompt('select_account consent');
