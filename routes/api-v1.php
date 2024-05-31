@@ -2,6 +2,7 @@
 // api-v1.php
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ExportController;
 use App\Http\Controllers\Api\GoogleCalendarController;
 use App\Http\Controllers\Api\ReservationController;
 use Carbon\Carbon;
@@ -15,6 +16,8 @@ Route::group(['middleware' => 'jwt.auth'], function () {
     Route::get('/google/redirect', [GoogleCalendarController::class, 'redirectToGoogle'])->name('google.redirect');
     Route::post('/google/callback', [GoogleCalendarController::class, 'handleGoogleCallback'])->name('google.callback');
     Route::post('/google/event/create', [GoogleCalendarController::class, 'createEvent'])->name('google.event.create');
+
+    Route::get('/reservations/export', [ExportController::class, 'exportReservations']);
 });
 
 Route::group(['prefix' => 'auth', 'middleware' => ['api']], function () {
@@ -23,3 +26,6 @@ Route::group(['prefix' => 'auth', 'middleware' => ['api']], function () {
     Route::post('refresh', [AuthController::class, 'refresh'])->middleware('jwt.auth');
     Route::get('me', [AuthController::class, 'me'])->middleware('jwt.auth');
 });
+
+Route::get('/reservations/export', [ExportController::class, 'exportReservations']);
+Route::get('/cabin-report', [ExportController::class, 'showReport']);
