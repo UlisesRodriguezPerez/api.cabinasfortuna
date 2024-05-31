@@ -11,7 +11,7 @@ class ExportController extends Controller
 {
     public function exportReservations()
     {
-        return Excel::download(new ReservationsExport, 'reservations-test.xlsx');
+        return Excel::download(new ReservationsExport, 'reservations-reports.xlsx');
     }
 
     public function showReport()
