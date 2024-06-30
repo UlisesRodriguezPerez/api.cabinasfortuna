@@ -70,7 +70,10 @@ class ReservationsExport implements FromView
             $totalCRCWithoutCommission20Porcent = $totalCRC - $comission20PorcentCRC;
 
             // Obtener gastos por cabina
-            $expenses = CabinExpense::where('cabin_name', $cabinId)->first();
+            $expenses = CabinExpense::where('cabin_name', $cabinId)
+                // where month yrear is 2024-06-30
+                ->where('month_year', '2024-06-30')
+                ->first();
             // Asegurar que cada lista de reservaciones es una colección
             $cabins[$cabinId] = new Collection([
                 'reservations' => new Collection(),

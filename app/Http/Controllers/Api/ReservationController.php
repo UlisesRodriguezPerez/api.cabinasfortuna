@@ -43,7 +43,7 @@ class ReservationController extends Controller
             // y puedes agregar más campos en el where como 'email', 'phone', etc.
             $query->where(function ($query) use ($request) {
                 $query->where('name', 'like', '%' . $request->search . '%')
-                    ->orWhere('note', 'like', '%' . $request->search . '%') // Si también deseas buscar por email
+                    ->orWhere('note', 'like', '%' . $request->search . '%') //
                     ->orWhere('phoneNumber', 'like', '%' . $request->search . '%'); // Si también deseas buscar por teléfono
             });
         }
